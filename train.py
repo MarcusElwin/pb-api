@@ -110,7 +110,7 @@ def get_training_data(
 @click.command()
 @click.option(
     "--train-data-path",
-    default="../dataset.csv",
+    default="data/dataset.csv",
     show_default=True,
     help="Path to training data",
     type=str,
