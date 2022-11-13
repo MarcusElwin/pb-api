@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  pb-rest-api:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - type: bind
+        source: ./
+        target: /user/code/
+      - type: bind
+        source: /tmp/model.joblib.gz
+        target: /tmp/model.joblib.gz

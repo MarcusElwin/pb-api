@@ -89,7 +89,7 @@ def evaluate_model(
             "recall": recall_score,
             "f1_score": f1_score,
         },
-        index=[0]
+        index=[0],
     )
 
     print(score_df)
