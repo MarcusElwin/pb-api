@@ -29,7 +29,8 @@ def load_model(model_path: Path = Path("/tmp/model.joblib.gz")):
 
 
 app = FastAPI()
-MODEL, MODEL_INFO = load_model()
+#MODEL, MODEL_INFO = load_model()
+MODEL_INFO = ModelInfo(version="v1.0", timestamp="202212081045")
 
 
 @app.get("/", response_model=ModelInfo)
@@ -38,34 +39,34 @@ async def model_info():
     return {"version": MODEL_INFO.version, "timestamp": MODEL_INFO.timestamp}
 
 
-@app.post("/v1/predict", response_model=ModelOutPut, status_code=200)
-async def get_model_prediction(input: ModelInput):
-    input_df = pd.json_normalize(input.__dict__)
-    logging.info(f"{len(input_df)} observations to predict on for user: {input.uuid}")
-    input_df = input_df.drop([USER_COL], axis=1)
-    prob_default = MODEL.predict_proba(input_df)[:, 1]
-    return {"uuid": input.uuid, "probability_default": prob_default}
-
-
-@app.post("/v1/predict/multiple", response_model=List[ModelOutPut], status_code=200)
-async def get_multiple_model_predictions(inputs: List[ModelInput]):
-    responses = []
-    prev_id = ""
-    for model_input in inputs:
-        if prev_id == model_input.uuid:
-            raise HTTPException(
-                status_code=400,
-                detail=f"User {model_input.uuid} has already been predicted one...",
-            )
-        input_df = pd.json_normalize(model_input.__dict__)
-        logging.info(
-            f"{len(input_df)} observations to predict on for user: {model_input.uuid}"
-        )
-        input_df = input_df.drop([USER_COL], axis=1)
-        prob_default = MODEL.predict_proba(input_df)[:, 1]
-        responses.append({"uuid": model_input.uuid, "probability_default": prob_default})
-        prev_id = model_input.uuid
-    return responses
+# @app.post("/v1/predict", response_model=ModelOutPut, status_code=200)
+# async def get_model_prediction(input: ModelInput):
+#     input_df = pd.json_normalize(input.__dict__)
+#     logging.info(f"{len(input_df)} observations to predict on for user: {input.uuid}")
+#     input_df = input_df.drop([USER_COL], axis=1)
+#     prob_default = MODEL.predict_proba(input_df)[:, 1]
+#     return {"uuid": input.uuid, "probability_default": prob_default}
+#
+#
+# @app.post("/v1/predict/multiple", response_model=List[ModelOutPut], status_code=200)
+# async def get_multiple_model_predictions(inputs: List[ModelInput]):
+#     responses = []
+#     prev_id = ""
+#     for model_input in inputs:
+#         if prev_id == model_input.uuid:
+#             raise HTTPException(
+#                 status_code=400,
+#                 detail=f"User {model_input.uuid} has already been predicted one...",
+#             )
+#         input_df = pd.json_normalize(model_input.__dict__)
+#         logging.info(
+#             f"{len(input_df)} observations to predict on for user: {model_input.uuid}"
+#         )
+#         input_df = input_df.drop([USER_COL], axis=1)
+#         prob_default = MODEL.predict_proba(input_df)[:, 1]
+#         responses.append({"uuid": model_input.uuid, "probability_default": prob_default})
+#         prev_id = model_input.uuid
+#     return responses
 
 
 if __name__ == "__main__":
