@@ -47,7 +47,7 @@ def evaluate_model_cv(
     num_folds: int = 5,
 ):
     scv = StratifiedKFold(n_splits=num_folds)
-    metric_names = ["roc_auc"]
+    metric_names = ["roc_auc", "f1", "precision", "recall"]
     scores_df = pd.DataFrame(index=metric_names, columns=["Stratified-CV"])
     for metric in metric_names:
         logging.info(f"Starting CV for metric: {metric}")
