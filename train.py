@@ -47,7 +47,7 @@ def evaluate_model_cv(
     num_folds: int = 5,
 ):
     scv = StratifiedKFold(n_splits=num_folds)
-    metric_names = ["roc_auc"]
+    metric_names = ["roc_auc", "f1", "precision", "recall"]
     scores_df = pd.DataFrame(index=metric_names, columns=["Stratified-CV"])
     for metric in metric_names:
         logging.info(f"Starting CV for metric: {metric}")
@@ -117,7 +117,7 @@ def get_training_data(
 )
 @click.option(
     "--save-model-path",
-    default="/tmp/",
+    default="./model/",
     show_default=True,
     help="Path where to save model",
     type=str,
@@ -168,6 +168,7 @@ def main(train_data_path: str, save_model_path: str, cross_validate: bool) -> No
     pred_dataset[TARGET] = model.predict_proba(input)[:, 1]  # # only positive class
 
     logging.info(f"Saving predictions...")
+    Path(save_model_path).mkdir(parents=True, exist_ok=True)
     pred_dataset.to_csv(Path(save_model_path) / "predictions.csv")
 
     version = str(uuid4())
