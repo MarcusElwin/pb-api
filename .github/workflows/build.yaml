@@ -30,19 +30,9 @@ jobs:
       - name: Test with pytest
         run: |
           pytest tests
-      #- name: Run training
-      #  run: |
-      #    python train.py
-      #- name: Upload model artefacts
-      #  uses: actions/upload-artifact@v3
-      #  with:
-      #    name: model
-      #    path: |
-      #      /tmp/model.joblib.gz
-      #- name: Delete old model artefacts
-      #  uses: geekyeggo/delete-artifact@v2
-      #  with:
-      #    name: model
+      - name: Run training
+        run: |
+          python train.py
       - name: Build docker image for API
         run: |
           docker build -t latest/pb-api -f Dockerfile .
@@ -54,9 +44,9 @@ jobs:
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          application_name: pd-api
-          environment_name: Pdapi-env
-          version_label: pd-api-${{github.SHA}}
+          application_name: prob-default-api
+          environment_name: Probdefaultapi-env
+          version_label: prob-default-api-${{github.SHA}}
           use_existing_version_if_available: false
           version_description: ${{github.SHA}}
           region: eu-west-1
