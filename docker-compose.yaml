@@ -5,11 +5,11 @@ services:
         context: .
         dockerfile: Dockerfile
     ports:
-      - "8000:8000"
-    volumes:
-      - type: bind
-        source: ./
-        target: /user/code/
-      - type: bind
-        source: /tmp/model.joblib.gz
-        target: /tmp/model.joblib.gz
+      - "80:8000"
+#    volumes:
+#      - type: bind
+#        source: ./
+#        target: /user/code/
+#      - type: bind
+#        source: /tmp/model.joblib.gz
+#        target: /tmp/model.joblib.gz

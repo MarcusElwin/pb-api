@@ -30,12 +30,34 @@ jobs:
       - name: Test with pytest
         run: |
           pytest tests
-      - name: Run training
+      #- name: Run training
+      #  run: |
+      #    python train.py
+      #- name: Upload model artefacts
+      #  uses: actions/upload-artifact@v3
+      #  with:
+      #    name: model
+      #    path: |
+      #      /tmp/model.joblib.gz
+      #- name: Delete old model artefacts
+      #  uses: geekyeggo/delete-artifact@v2
+      #  with:
+      #    name: model
+      - name: Build docker image for API
         run: |
-          python train.py
-      - name: Upload model artefacts
-        uses: actions/upload-artifact@v3
+          docker build -t latest/pb-api -f Dockerfile .
+      - name: Generate deployment package for API
+        run: |
+          zip -r deploy.zip . -x '*.git*'.
+      - name: Deploy API to EB
+        uses: einaregilsson/beanstalk-deploy@v20
         with:
-          name: model
-          path: |
-            /tmp/model.joblib.gz
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: pd-api
+          environment_name: Pdapi-env
+          version_label: pd-api-${{github.SHA}}
+          use_existing_version_if_available: false
+          version_description: ${{github.SHA}}
+          region: eu-west-1
+          deployment_package: deploy.zip
