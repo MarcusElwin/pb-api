@@ -30,7 +30,7 @@ app = FastAPI()
 MODEL, MODEL_INFO = load_model()
 
 
-@app.get("v1/", response_model=ModelInfo)
+@app.get("/", response_model=ModelInfo)
 async def model_info():
     """Gets model info as version & timestamp"""
     logging.info(f"Getting model version..")
