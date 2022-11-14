@@ -1,13 +1,14 @@
-import click, logging
+import click, logging, gzip
 import pandas as pd
 from joblib import dump
 from features.utils import train_test_split_per_column
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn import metrics
+from uuid import uuid4
+from datetime import datetime
 from constants import (
-    CATEGORICAL_FEATURES,
-    COL_DTYPE_MAPS,
     EXCL_FEATURES,
     TARGET,
     USER_COL,
@@ -56,6 +57,44 @@ def evaluate_model_cv(
     print(scores_df)
 
 
+def evaluate_model(
+    clf: Union[RandomForestClassifier], X_test: pd.DataFrame, y_test: pd.DataFrame
+):
+    logging.info(f"Evaluating model on test...")
+
+    # predict on new data
+    predictions = clf.predict(X_test)
+
+    # predict proba
+    y_pred_proba = clf.predict_proba(X_test)[:, 1]
+
+    # calculate metrics
+    accuracy = round(metrics.accuracy_score(y_test, predictions), 4)
+    fpr, tpr, _ = metrics.roc_curve(y_test, y_pred_proba)
+    auc = round(metrics.roc_auc_score(y_test, y_pred_proba), 4)
+    precision, recall, _ = metrics.precision_recall_curve(y_test, y_pred_proba)
+    pr_auc = round(metrics.auc(recall, precision), 4)
+    f1_score = round(metrics.f1_score(y_test, predictions, average="binary"), 4)
+    precision_score = round(
+        metrics.precision_score(y_test, predictions, average="binary"), 4
+    )
+    recall_score = round(metrics.recall_score(y_test, predictions, average="binary"), 4)
+
+    score_df = pd.DataFrame(
+        {
+            "accuracy": accuracy,
+            "auc": auc,
+            "pr_auc": pr_auc,
+            "precision": precision_score,
+            "recall": recall_score,
+            "f1_score": f1_score,
+        },
+        index=[0],
+    )
+
+    print(score_df)
+
+
 def get_training_data(
     dataset: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -68,10 +107,10 @@ def get_training_data(
     return X_train, y_train, X_test, y_test
 
 
-@click.command()  # add click cli instead of argparse
+@click.command()
 @click.option(
     "--train-data-path",
-    default="../dataset.csv",
+    default="data/dataset.csv",
     show_default=True,
     help="Path to training data",
     type=str,
@@ -83,7 +122,14 @@ def get_training_data(
     help="Path where to save model",
     type=str,
 )
-def main(train_data_path: str, save_model_path: str) -> None:
+@click.option(
+    "--cross-validate",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="To evaluate model using cross-validation",
+)
+def main(train_data_path: str, save_model_path: str, cross_validate: bool) -> None:
     """Main script for running model training"""
     logging.info(f"Loading data from {str(Path(train_data_path))}")
     if Path(train_data_path).exists():
@@ -111,7 +157,10 @@ def main(train_data_path: str, save_model_path: str) -> None:
     model = model_pipeline.fit(X_train, y_train)
 
     logging.info("Evaluate model...")
-    evaluate_model_cv(model, X_train, y_train, num_folds=5)
+    if cross_validate:
+        evaluate_model_cv(model, X_train, y_train, num_folds=5)
+    else:
+        evaluate_model(model, X_test, y_test)
 
     logging.info(f"Make prediction on new data...")
     input = pred_dataset.drop([TARGET, USER_COL], axis=1)
@@ -121,8 +170,11 @@ def main(train_data_path: str, save_model_path: str) -> None:
     logging.info(f"Saving predictions...")
     pred_dataset.to_csv(Path(save_model_path) / "predictions.csv")
 
-    logging.info(f"Save model...")
-    dump(model, Path(save_model_path) / "model.joblib")
+    version = str(uuid4())
+    logging.info(f"Save model with version {version}...")
+    model.version = version
+    model.timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    dump(model, gzip.open(Path(save_model_path) / "model.joblib.gz", "wb"))
 
 
 if __name__ == "__main__":
