@@ -176,6 +176,7 @@ def main(train_data_path: str, save_model_path: str, cross_validate: bool) -> No
     model.version = version
     model.timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     dump(model, gzip.open(Path(save_model_path) / "model.joblib.gz", "wb"))
+    logging.info("Done!✅")
 
 
 if __name__ == "__main__":
