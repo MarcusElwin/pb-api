@@ -4,5 +4,12 @@ services:
     build:
         context: .
         dockerfile: Dockerfile
+  pb-train:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    command: python3 train.py
+    volumes:
+      - ./model:/.model
     ports:
       - "80:8000"
